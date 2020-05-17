@@ -1,6 +1,4 @@
-﻿  raytracing.cpp
-D:\mystudy\comgra\Project\assignment4\raytracer\src\hitable.h(26,18): warning C4099: 'rt::HitRecord': type name first seen using 'class' now seen using 'struct'
-D:\mystudy\comgra\Project\assignment4\raytracer\src\hitable.h(26): message : see declaration of 'rt::HitRecord'
+﻿  main.cpp
 D:\mystudy\comgra\Project\assignment4\raytracer\src\utils2.h(62,22): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 D:\mystudy\comgra\Project\assignment4\raytracer\src\utils2.h(65,38): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 D:\mystudy\comgra\Project\assignment4\raytracer\src\utils2.h(79,36): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
@@ -15,6 +13,14 @@ D:\mystudy\comgra\Project\assignment4\raytracer\src\utils2.h(297,1): warning C49
 D:\Windows Kits\10\Include\10.0.18362.0\ucrt\stdio.h(2263): message : see declaration of 'sscanf'
 D:\mystudy\comgra\Project\assignment4\raytracer\src\utils2.h(311,1): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Windows Kits\10\Include\10.0.18362.0\ucrt\stdio.h(2263): message : see declaration of 'sscanf'
-D:\mystudy\comgra\Project\assignment4\raytracer\src\raytracing.cpp(140,63): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\mystudy\comgra\Project\assignment4\raytracer\src\raytracing.cpp(141,62): warning C4305: 'argument': truncation from 'double' to 'float'
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(42,1): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\Windows Kits\10\Include\10.0.18362.0\ucrt\stdlib.h(1191): message : see declaration of 'getenv'
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(112,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(257,44): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(257,41): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(260,45): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(260,42): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(269,27): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(269,24): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp(330,39): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   raytracer.vcxproj -> D:\mystudy\comgra\Project\assignment4\raytracer\bin\Debug\raytracer.exe

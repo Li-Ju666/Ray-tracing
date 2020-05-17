@@ -9,6 +9,7 @@
 #include "utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>  // Needed for drand48()
 
+
 namespace rt {
 
 // Store scene (world) in a global variable for convenience
@@ -63,6 +64,23 @@ glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n) {
     return v - 2.0f * glm::dot(v, n) * n; 
 }
 
+bool refract(const glm::vec3& v, const glm::vec3& n, float ni_over_nt, glm::vec3& refracted) {
+    glm::vec3 uv = glm::normalize(v); 
+    float dt = glm::dot(uv, n); 
+    float discriminant = 1.0 - ni_over_nt * ni_over_nt * (1 - dt * dt); 
+    if (discriminant > 0) {
+        refracted = ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
+        return true;
+    }
+    else
+        return false; 
+}
+
+float schlick(float cosine, float ref_idx) {
+    float r0 = (1 - ref_idx) / (1 + ref_idx); 
+    r0 = r0 * r0; 
+    return r0 + (1 - r0) * pow((1 - cosine), 5); 
+}
 // This function should be called recursively (inside the function) for
 // bouncing rays when you compute the lighting for materials, like this
 //
@@ -136,15 +154,28 @@ glm::vec3 color(RTContext& rtx, const Ray& r, int max_bounces)
 void setupScene(RTContext &rtx, const char *filename)
 {
     
-    material* mat1 = new lambertian(glm::vec3(0.8, 0.3, 0.3)); 
-    material* mat2 = new metal(glm::vec3(0.8, 0.6, 0.2), 0.05); 
-    material* mat3 = new metal(glm::vec3(0.8, 0.8, 0.8), 0.2); 
-    material* matbackground = new lambertian(glm::vec3(0.8, 0.8, 0)); 
+    material* pinklamb = new lambertian(glm::vec3(0.8, 0.3, 0.3)); 
+    material* yellowmet = new metal(glm::vec3(0.8, 0.6, 0.2), 0.05); 
+    material* bluemet = new metal(glm::vec3(0.2, 0.6, 0.8), 0.05);
+
+ //   material* mat3 = new metal(glm::vec3(0.8, 0.8, 0.8), 0.2); 
+    material* glass = new dielectric(1.55f); 
+    material* matbackground = new lambertian(glm::vec3(0.8, 0.8, 0.8)); 
     g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, matbackground);
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, mat1), 
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, mat2), 
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, mat3), 
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, pinklamb), 
+        Sphere(glm::vec3(1.2f, 0.0f, 0.0f), 0.5f, yellowmet), 
+        Sphere(glm::vec3(-1.2f, 0.0f, 0.0f), 0.5f, bluemet), 
+        
+        Sphere(glm::vec3(0.0f, -0.3f, 1.0f), 0.2f, glass),
+        Sphere(glm::vec3(0.3f, -0.3f, 0.6f), 0.2f, bluemet),
+        Sphere(glm::vec3(-0.8f, -0.4f, -0.7f), 0.1f, bluemet),
+
+        //Sphere(glm::vec3(1.0f, 0.0f, 1.0f), 0.1, mat2),
+        //Sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.1f, mat1),
+        //Sphere(glm::vec3(-1.0f, 0.0f, 1.5f), 0.1f, mat3),
+        //Sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.1f, mat3),
+
     };
     /*g_scene.materials = {
         lambertian(glm::vec3(0.8, 0.3, 0.3)),
@@ -188,23 +219,31 @@ void updateLine(RTContext &rtx, int y)
     #pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {
         glm::vec3 c = glm::vec3(0.0f); 
-        for (int s = 0; s < ns; s++) {
-            float u = (float(x)+ 2 * (float)rand() / RAND_MAX - 1) / float(nx);
-            float v = (float(y)+ 2 * (float)rand() / RAND_MAX - 1) / float(ny);
+        if (rtx.anti_alias) {
+            for (int s = 0; s < ns; s++) {
+                float u = (float(x) + (float)rand() / RAND_MAX) / float(nx);
+                float v = (float(y) + (float)rand() / RAND_MAX) / float(ny);
+                Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
+                r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
+                r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));
+                c += color(rtx, r, rtx.max_bounces);
+            }
+            c /= float(ns); 
+        }
+        else {
+            float u = float(x)/ float(nx);
+            float v = float(y) / float(ny);
             Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
             r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
-            r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));  
-            //std::cout << "going to color! " << std::endl; 
-            c += color(rtx, r, rtx.max_bounces);
+            r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));
+            c = color(rtx, r, rtx.max_bounces);
         }
         if (rtx.current_frame <= 0) {
-                // Here we make the first frame blend with the old image,
-                // to smoothen the transition when resetting the accumulation
-                glm::vec4 old = rtx.image[y * nx + x];
-                rtx.image[y * nx + x] = glm::clamp(old / glm::max(1.0f, old.a), 0.0f, 1.0f);
+                glm::vec4 old = rtx.image[y*nx + x];
+                rtx.image[y*nx + x] = glm::clamp(old / glm::max(1.0f, old.a), 0.0f, 1.0f);
             }
-        c = c / float(ns); 
-        rtx.image[y * nx + x] += glm::vec4(c, 1.0f);
+        //c = c / float(ns); 
+        rtx.image[y*nx + x] += glm::vec4(c, 1.0f);
     }
 }
 

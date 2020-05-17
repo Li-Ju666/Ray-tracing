@@ -33,6 +33,7 @@ struct Context {
     rt::RTContext rtx;
     GLuint texture = 0;
     float elapsed_time;
+    bool gamma_correction; 
 };
 
 // Returns the value of an environment variable
@@ -126,7 +127,8 @@ void drawImage(Context &ctx)
     // Activate program and pass uniform for texture unit
     glUseProgram(ctx.program);
     glUniform1i(glGetUniformLocation(ctx.program, "u_texture"), 0);
-
+    glUniform1i(glGetUniformLocation(ctx.program, "Gamma_Correction"),
+        ctx.gamma_correction);
     // Draw single triangle (without any vertex buffers)
     glBindVertexArray(ctx.defaultVAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -147,6 +149,13 @@ void showGui(Context &ctx)
     if (ImGui::Checkbox("Show normals", &ctx.rtx.show_normals)) {
         rt::resetAccumulation(ctx.rtx);
     }
+    if (ImGui::Checkbox("Anti-liasing", &ctx.rtx.anti_alias)) {
+        rt::resetAccumulation(ctx.rtx);
+    }
+    if (ImGui::Checkbox("Gamma Correction", &ctx.gamma_correction)) {
+        rt::resetAccumulation(ctx.rtx);
+    }
+
     // Add more settings and parameters here
     // ...
 
@@ -168,7 +177,7 @@ void display(Context &ctx)
 
     // Update view matrix
     glm::mat4 trackball = trackballGetRotationMatrix(ctx.trackball);
-    glm::vec3 eye = glm::mat3(trackball) * glm::vec3(0.0f, 0.0f, 2.0f);
+    glm::vec3 eye = glm::mat3(trackball) * glm::vec3(0.0f, 0.0f, 2.5f);
     ctx.rtx.view = glm::lookAt(eye, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     if (ctx.trackball.tracking) {
         rt::resetAccumulation(ctx.rtx);

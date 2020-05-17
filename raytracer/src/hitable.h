@@ -5,11 +5,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <iostream>
+#include <math.h>
 
 namespace rt {
 
 glm::vec3 random_in_unit_sphere(); 
 glm::vec3 reflect(const glm::vec3&, const glm::vec3&); 
+bool refract(const glm::vec3&, const glm::vec3&, float, glm::vec3&); 
+float schlick(float, float); 
 
 class material; 
 class HitRecord; 
@@ -70,5 +73,51 @@ class metal : public material {
         float fuzz; 
 };
 
+class dielectric : public material {
+public: 
+    dielectric(float ri) { ref_idx = ri;  }
+    virtual bool scatter(const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered) const {
+        glm::vec3 outward_normal; 
+        glm::vec3 reflected = reflect(r_in.direction(), rec.normal); 
+        float ni_over_nt; 
+        attenuation = glm::vec3(1.0f, 1.0f, 1.0f); 
+        glm::vec3 refracted; 
+        float reflect_prob; 
+        float cosine; 
+        if (glm::dot(r_in.direction(), rec.normal) > 0) {
+            outward_normal = -rec.normal; 
+            ni_over_nt = ref_idx; 
+            cosine = ref_idx * glm::dot(r_in.direction(), rec.normal) /
+                glm::length(r_in.direction()); 
+        }
+        else {
+            outward_normal = rec.normal; 
+            ni_over_nt = 1.0 / ref_idx; 
+            cosine = -glm::dot(r_in.direction(), rec.normal) /
+                glm::length(r_in.direction()); 
+        }
+        if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
+            reflect_prob = schlick(cosine, ref_idx); 
+            //scattered = Ray(rec.p, refracted); 
+        }
+        else {
+            //scattered = Ray(rec.p, reflected); 
+            reflect_prob = 1.0; 
+            //return false; 
+        }
+        if ((float)rand() / RAND_MAX < reflect_prob) {
+            scattered = Ray(rec.p, reflected); 
+            //std::cout << "A " << std::endl; 
+        }
+        else {
+            scattered = Ray(rec.p, refracted);
+            //std::cout << "B " << std::endl;
+        }
+        return true; 
+
+    }
+    float ref_idx; 
+
+};
 
 } // namespace rt
