@@ -4,6 +4,7 @@
 #include "sphere.h"
 #include "triangle.h"
 #include "box.h"
+//#include <openmpi.h>
 
 #include "utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>  // Needed for drand48()
@@ -14,6 +15,8 @@ namespace rt {
 struct Scene {
     Sphere ground;
     std::vector<Sphere> spheres;
+    //std::vector<material> materials; 
+    //std::vector<Hitable> list; 
     std::vector<Box> boxes;
     std::vector<Triangle> mesh;
     Box mesh_bbox;
@@ -31,6 +34,8 @@ bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
         rec = temp_rec;
     }
     for (int i = 0; i < g_scene.spheres.size(); ++i) {
+        //std::cout << "My material is" << g_scene.spheres[i].mat_ptr->albedo[0] <<
+        //    g_scene.spheres[i].mat_ptr->albedo[1] << g_scene.spheres[i].mat_ptr->albedo[2] << std::endl;
         if (g_scene.spheres[i].hit(r, t_min, closest_so_far, temp_rec)) {
             hit_anything = true;
             closest_so_far = temp_rec.t;
@@ -54,6 +59,10 @@ bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
     return hit_anything;
 }
 
+glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n) {
+    return v - 2.0f * glm::dot(v, n) * n; 
+}
+
 // This function should be called recursively (inside the function) for
 // bouncing rays when you compute the lighting for materials, like this
 //
@@ -63,37 +72,85 @@ bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
 // }
 //
 // See Chapter 7 in the "Ray Tracing in a Weekend" book
-glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
+glm::vec3 random_in_unit_sphere() {
+    glm::vec3 p; 
+
+    
+    do {
+        float randa = 2 * (float)rand() / RAND_MAX - 1;
+        float randb = 2 * (float)rand() / RAND_MAX - 1;
+        float randc = 2 * (float)rand() / RAND_MAX - 1;
+        p = 2.0f * glm::vec3(randa, randb, randc)-
+            glm::vec3(1.0f,1.0f,1.0f); 
+        
+    } while (glm::length(p) >= 1.0); 
+
+    //std::cout << p[0] << ", " << p[1] << ", " << p[2] << std::endl; 
+    return p; 
+}
+glm::vec3 color(RTContext& rtx, const Ray& r, int max_bounces)
 {
+    //std::cout << "Going to color the pixel! " << std::endl; 
     if (max_bounces < 0) return glm::vec3(0.0f);
 
     HitRecord rec;
-    if (hit_world(r, 0.0f, 9999.0f, rec)) {
+    if (hit_world(r, 0.001f, 9999.0f, rec)) {
         rec.normal = glm::normalize(rec.normal);  // Always normalise before use!
         if (rtx.show_normals) {
+            //std::cout << "Normal vector visualization! " << std::endl; 
             return rec.normal * 0.5f + 0.5f;
         }
+        else {
+            //std::cout << "going to color! " << std::endl; 
+            Ray scattered; 
+            glm::vec3 attenuation; 
+            //std::cout << "going to scatter! " << std::endl; 
+            //_sleep(1000); 
+            if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
 
-        // Implement lighting for materials here
-        // ...
-        return glm::vec3(0.0f);
+                //std::cout << "Scatter finished! " << std::endl; 
+                //_sleep(1000);
+                return attenuation*color(rtx, scattered, max_bounces - 1); 
+            }
+            else {
+                return glm::vec3(0.0f); 
+            }
+            // Implement lighting for materials here
+            // ...
+            //std::cout << "To color! " << std::endl; 
+            //glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+            //std::cout << "Going to lightning for material! " << std::endl;
+            //return 0.5f * color(rtx, Ray(rec.p, target - rec.p), max_bounces - 1);
+        }
+        //return glm::vec3(0.0f);
     }
 
-    // If no hit, return sky color
-    glm::vec3 unit_direction = glm::normalize(r.direction());
-    float t = 0.5f * (unit_direction.y + 1.0f);
-    return (1.0f - t) * rtx.ground_color + t * rtx.sky_color;
+    else {// If no hit, return sky color
+        glm::vec3 unit_direction = glm::normalize(r.direction());
+        float t = 0.5f * (unit_direction.y + 1.0f);
+        return (1.0f - t) * rtx.ground_color + t * rtx.sky_color; 
+    }
 }
 
 // MODIFY THIS FUNCTION!
 void setupScene(RTContext &rtx, const char *filename)
 {
-    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f);
+    
+    material* mat1 = new lambertian(glm::vec3(0.8, 0.3, 0.3)); 
+    material* mat2 = new metal(glm::vec3(0.8, 0.6, 0.2), 0.05); 
+    material* mat3 = new metal(glm::vec3(0.8, 0.8, 0.8), 0.2); 
+    material* matbackground = new lambertian(glm::vec3(0.8, 0.8, 0)); 
+    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, matbackground);
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f),
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, mat1), 
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, mat2), 
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, mat3), 
     };
+    /*g_scene.materials = {
+        lambertian(glm::vec3(0.8, 0.3, 0.3)),
+        lambertian(glm::vec3(0.8, 0.3, 0.3)),
+        metal(glm::vec3(0.8, 0.8, 0.8)),
+    };*/ 
     //g_scene.boxes = {
     //    Box(glm::vec3(0.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
     //    Box(glm::vec3(1.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
@@ -120,6 +177,7 @@ void updateLine(RTContext &rtx, int y)
     int nx = rtx.width;
     int ny = rtx.height;
     float aspect = float(nx) / float(ny);
+    int ns = 2; 
     glm::vec3 lower_left_corner(-1.0f * aspect, -1.0f, -1.0f);
     glm::vec3 horizontal(2.0f * aspect, 0.0f, 0.0f);
     glm::vec3 vertical(0.0f, 2.0f, 0.0f);
@@ -127,21 +185,25 @@ void updateLine(RTContext &rtx, int y)
     glm::mat4 world_from_view = glm::inverse(rtx.view);
 
     // You can try to parallelise this loop by uncommenting this line:
-    //#pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {
-        float u = (float(x) + 0.5f) / float(nx);
-        float v = (float(y) + 0.5f) / float(ny);
-        Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
-        r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
-        r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));
-
-        if (rtx.current_frame <= 0) {
-            // Here we make the first frame blend with the old image,
-            // to smoothen the transition when resetting the accumulation
-            glm::vec4 old = rtx.image[y * nx + x];
-            rtx.image[y * nx + x] = glm::clamp(old / glm::max(1.0f, old.a), 0.0f, 1.0f);
+        glm::vec3 c = glm::vec3(0.0f); 
+        for (int s = 0; s < ns; s++) {
+            float u = (float(x)+ 2 * (float)rand() / RAND_MAX - 1) / float(nx);
+            float v = (float(y)+ 2 * (float)rand() / RAND_MAX - 1) / float(ny);
+            Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
+            r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
+            r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));  
+            //std::cout << "going to color! " << std::endl; 
+            c += color(rtx, r, rtx.max_bounces);
         }
-        glm::vec3 c = color(rtx, r, rtx.max_bounces);
+        if (rtx.current_frame <= 0) {
+                // Here we make the first frame blend with the old image,
+                // to smoothen the transition when resetting the accumulation
+                glm::vec4 old = rtx.image[y * nx + x];
+                rtx.image[y * nx + x] = glm::clamp(old / glm::max(1.0f, old.a), 0.0f, 1.0f);
+            }
+        c = c / float(ns); 
         rtx.image[y * nx + x] += glm::vec4(c, 1.0f);
     }
 }

@@ -97,7 +97,7 @@ void init(Context &ctx)
     createImageTexture(&ctx.texture, ctx.rtx.width, ctx.rtx.height);
 
     // Set up ray tracing scene
-    rt::setupScene(ctx.rtx, (modelDir() + "bunny_lowpoly.obj").c_str());
+    rt::setupScene(ctx.rtx, NULL/*(modelDir() + "bunny_lowpoly.obj").c_str()*/);
 
     initializeTrackball(ctx);
 }

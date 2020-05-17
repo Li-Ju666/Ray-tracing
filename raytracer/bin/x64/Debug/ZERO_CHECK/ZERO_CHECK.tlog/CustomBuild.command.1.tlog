@@ -1,0 +1,10 @@
+^D:\MYSTUDY\COMGRA\PROJECT\ASSIGNMENT4\RAYTRACER\BIN\CMAKEFILES\C9DC3AD0C0D4CE6AF088F9570830A426\GENERATE.STAMP.RULE
+setlocal
+D:\cmake-3.14.0-win64-x64\bin\cmake.exe -SD:/mystudy/comgra/Project/assignment4/raytracer -BD:/mystudy/comgra/Project/assignment4/raytracer/bin --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file D:/mystudy/comgra/Project/assignment4/raytracer/bin/raytracer.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -8,10 +8,16 @@ class Sphere: public Hitable {
 public:
     Sphere() {}
     Sphere(const glm::vec3 &cen, float r) : center(cen), radius(r) {};
+    Sphere(const glm::vec3& cen, float r, material* mat) : center(cen), radius(r) { 
+        mat_ptr = mat;  
+        //std::cout << "My material is" << this->mat_ptr->albedo[0] << std::endl;
+    };
+
     virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const;
 
     glm::vec3 center;
     float radius;
+    //material* mat_ptr; 
 };
 
 // Ray-sphere test from "Ray Tracing in a Weekend" book (page 16)
@@ -30,6 +36,10 @@ bool Sphere::hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const
             rec.t = temp;
             rec.p = r.point_at_parameter(rec.t);
             rec.normal = (rec.p - center) / radius;
+            rec.mat_ptr = this->mat_ptr;
+                //std::cout << "My material is " << rec.mat_ptr->albedo[0] <<
+                //    rec.mat_ptr->albedo[1] << rec.mat_ptr->albedo[2] << std::endl;
+            //_sleep(10000); 
             return true;
         }
     }
