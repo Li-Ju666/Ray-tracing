@@ -70,6 +70,7 @@ std::string modelDir(void)
     return rootDir + "/raytracer/3d_models/";
 }
 
+
 void createImageTexture(GLuint *texture, int width, int height)
 {
     glDeleteTextures(1, texture);

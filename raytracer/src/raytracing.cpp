@@ -8,7 +8,7 @@
 
 #include "utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>  // Needed for drand48()
-
+std::string modelDir(void); 
 
 namespace rt {
 
@@ -122,16 +122,18 @@ glm::vec3 color(RTContext& rtx, const Ray& r, int max_bounces)
             //std::cout << "going to color! " << std::endl; 
             Ray scattered; 
             glm::vec3 attenuation; 
+            glm::vec3 emitted = rec.mat_ptr->emit(rec); 
             //std::cout << "going to scatter! " << std::endl; 
             //_sleep(1000); 
             if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
 
                 //std::cout << "Scatter finished! " << std::endl; 
                 //_sleep(1000);
-                return attenuation*color(rtx, scattered, max_bounces - 1); 
+                return emitted + attenuation*color(rtx, scattered, max_bounces - 1); 
             }
             else {
-                return glm::vec3(0.0f); 
+                //std::cout << "Emitted is " << emitted[0] << std::endl; 
+                return emitted; 
             }
             // Implement lighting for materials here
             // ...
@@ -146,7 +148,8 @@ glm::vec3 color(RTContext& rtx, const Ray& r, int max_bounces)
     else {// If no hit, return sky color
         glm::vec3 unit_direction = glm::normalize(r.direction());
         float t = 0.5f * (unit_direction.y + 1.0f);
-        return (1.0f - t) * rtx.ground_color + t * rtx.sky_color; 
+        //return (1.0f - t) * rtx.ground_color + t * rtx.sky_color; 
+        return glm::vec3(0.0f); 
     }
 }
 
@@ -157,19 +160,22 @@ void setupScene(RTContext &rtx, const char *filename)
     material* pinklamb = new lambertian(glm::vec3(0.8, 0.3, 0.3)); 
     material* yellowmet = new metal(glm::vec3(0.8, 0.6, 0.2), 0.05); 
     material* bluemet = new metal(glm::vec3(0.2, 0.6, 0.8), 0.05);
-
+    material* redlight = new diffuse_light(glm::vec3(0.8f, 0.8f, 0.0f), 50); 
  //   material* mat3 = new metal(glm::vec3(0.8, 0.8, 0.8), 0.2); 
     material* glass = new dielectric(1.55f); 
     material* matbackground = new lambertian(glm::vec3(0.8, 0.8, 0.8)); 
     g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, matbackground);
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, pinklamb), 
-        Sphere(glm::vec3(1.2f, 0.0f, 0.0f), 0.5f, yellowmet), 
-        Sphere(glm::vec3(-1.2f, 0.0f, 0.0f), 0.5f, bluemet), 
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, yellowmet),
+        Sphere(glm::vec3(1.2f, 0.0f, 0.0f), 0.5f, pinklamb),
+        Sphere(glm::vec3(-1.2f, 0.0f, 0.0f), 0.5f, glass),
         
+        Sphere(glm::vec3(-1.0f, 5.0f, 0.0f), 0.1, redlight), 
+        //Sphere(glm::vec3(0.0f, 1.0f, 0.0f), 0.3, glass),
+
         Sphere(glm::vec3(0.0f, -0.3f, 1.0f), 0.2f, glass),
         Sphere(glm::vec3(0.3f, -0.3f, 0.6f), 0.2f, bluemet),
-        Sphere(glm::vec3(-0.8f, -0.4f, -0.7f), 0.1f, bluemet),
+        Sphere(glm::vec3(-0.8f, -0.4f, -0.7f), 0.1f, yellowmet),
 
         //Sphere(glm::vec3(1.0f, 0.0f, 1.0f), 0.1, mat2),
         //Sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.1f, mat1),
@@ -177,29 +183,25 @@ void setupScene(RTContext &rtx, const char *filename)
         //Sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.1f, mat3),
 
     };
-    /*g_scene.materials = {
-        lambertian(glm::vec3(0.8, 0.3, 0.3)),
-        lambertian(glm::vec3(0.8, 0.3, 0.3)),
-        metal(glm::vec3(0.8, 0.8, 0.8)),
-    };*/ 
-    //g_scene.boxes = {
-    //    Box(glm::vec3(0.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
-    //    Box(glm::vec3(1.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
-    //    Box(glm::vec3(-1.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
-    //};
 
-    //OBJMesh mesh;
-    //objMeshLoad(mesh, filename);
-    //g_scene.mesh.clear();
-    //for (int i = 0; i < mesh.indices.size(); i += 3) {
-    //    int i0 = mesh.indices[i + 0];
-    //    int i1 = mesh.indices[i + 1];
-    //    int i2 = mesh.indices[i + 2];
-    //    glm::vec3 v0 = mesh.vertices[i0] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    glm::vec3 v1 = mesh.vertices[i1] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    glm::vec3 v2 = mesh.vertices[i2] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    g_scene.mesh.push_back(Triangle(v0, v1, v2));
-    //}
+    /*g_scene.boxes = {
+        //Box(glm::vec3(0.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
+        //Box(glm::vec3(1.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
+        //Box(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f)),
+    };
+
+    OBJMesh mesh;
+    objMeshLoad(mesh, modelDir()+"armadillo_lowpoly.obj");
+    g_scene.mesh.clear();
+    for (int i = 0; i < mesh.indices.size(); i += 3) {
+        int i0 = mesh.indices[i + 0];
+        int i1 = mesh.indices[i + 1];
+        int i2 = mesh.indices[i + 2];
+        glm::vec3 v0 = mesh.vertices[i0] + glm::vec3(0.0f, 0.135f, 0.0f);
+        glm::vec3 v1 = mesh.vertices[i1] + glm::vec3(0.0f, 0.135f, 0.0f);
+        glm::vec3 v2 = mesh.vertices[i2] + glm::vec3(0.0f, 0.135f, 0.0f);
+        g_scene.mesh.push_back(Triangle(v0, v1, v2, bluemet));
+    }*/
 }
 
 // MODIFY THIS FUNCTION!

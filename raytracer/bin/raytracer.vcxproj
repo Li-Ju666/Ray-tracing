@@ -320,6 +320,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\hitable.cpp" />
     <ClCompile Include="D:\mystudy\comgra\Project\assignment4\raytracer\src\main.cpp" />
     <ClCompile Include="D:\mystudy\comgra\Project\assignment4\raytracer\src\raytracing.cpp" />
     <ClCompile Include="D:\mystudy\comgra\Project\assignment4\external\glew\src\glew.c">

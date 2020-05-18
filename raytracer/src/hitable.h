@@ -37,6 +37,9 @@ class material {
     public: 
         virtual bool scatter(const Ray& r_in, const HitRecord& rec, 
             glm::vec3& attenuation, Ray& scattered) const = 0; 
+        virtual glm::vec3 emit(const HitRecord& rec) {
+            return glm::vec3(0.0); 
+        }
     public:
         glm::vec3 albedo; 
 };
@@ -54,7 +57,6 @@ class lambertian : public material {
             attenuation = albedo; 
             return true; 
         }
-        //glm::vec3 albedo; 
 };
 
 class metal : public material {
@@ -69,7 +71,6 @@ class metal : public material {
             attenuation = albedo; 
             return (glm::dot(scattered.direction(), rec.normal) > 0); 
         }
-        //glm::vec3 albedo; 
         float fuzz; 
 };
 
@@ -117,6 +118,25 @@ public:
 
     }
     float ref_idx; 
+
+};
+
+class diffuse_light : public material {
+public:
+    diffuse_light(glm::vec3& light_color, float t) { 
+        emit_light = light_color; 
+        intensity = t; 
+        //std::cout << "Emit light is " << emit[0] << std::endl; 
+    }
+    virtual bool scatter(const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered) const {
+        return false; 
+    }
+
+    virtual glm::vec3 emit(const HitRecord& rec) {
+        return intensity*emit_light;
+    }
+    glm::vec3 emit_light;
+    float intensity; 
 
 };
 
